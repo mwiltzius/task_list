@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Task Manager</title>
+    <style>
+    div{
+        display: inline-block;
+        width: 49%;
+    }
+    #task-input{
+        padding: 5px;
+        border-radius: 10px;
+        border: 1px solid grey;
+        width: 300px;
+        box-sizing: border-box;
+    }
+    div.task{
+        display: block;
+        width: 100%;
+    }
+    .submit{
+        text-align: center;
+        padding: 5px;
+        width: 150px;
+        display: block;
+        margin: 10px 75px;
+    }
+    input[type=text]{
+        display: inline-block;
+    }
+    
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+    $(document).ready(function(){
+        //displays tasks on load
+        $.get('/task_list', function(items){
+            $('#task-list').html(items)
+        })
+        //adds task
+        $('#task-form').submit(function(e){
+            e.preventDefault(e);
+            $.ajax({
+                url: '/add_task',
+                method: 'POST',
+                data: $('#task-form').serialize(),
+                success: function(){
+                    //displays added task
+                    $.get('/task_list', function(items){
+                        $('#task-list').html(items);
+                    })
+                    //empties input
+                    $('#task-input').val("");
+                }
+            })
+        })
+        //when 'edit' button clicked on AJAX content:
+        $('div#task-list').on('click', '.edit', function(){
+            let label = $(this).siblings("label");
+            //if not being edited
+            if(label.attr("edit") == 'false'){
+                let task = label.text();
+                label.html('<input type="text" name="change" value="' + task + '">');
+                label.attr("edit", 'true');
+                label.siblings('input').attr('disabled', true)
+            }
+            //if being edited
+            else if(label.attr("edit") == 'true'){
+                let task = label.children('input');
+                $.ajax({
+                    url: '/update_task/' + label.siblings('input').attr('id'),
+                    method: 'POST',
+                    data: task.serialize(),
+                    success: function(){
+                        label.text(task.val());
+                        label.attr("edit", 'false');
+                        label.siblings('input').removeAttr('disabled')
+                    }
+                })
+            }
+        })
+        //when checked:
+        $('div#task-list').on('click', ':checkbox', function(){
+            let label = $(this).siblings('label');
+            if (label.attr('edit') != 'true'){
+                if ($(this).prop('checked') == true){
+                    $.ajax({
+                        url: '/finish_task/' + $(this).attr('id'),
+                        method: 'POST',
+                        data: $(this).serialize(),
+                        success: function(){
+                            label.attr('edit', 'none');
+                            label.css('color', 'grey');
+                            label.siblings('input').attr('disabled', true);
+                        }
+                    })
+                }
+                else if ($(this).prop('checked') == false){
+                    label.attr('edit', 'false');
+                    $(this).attr('style', '');
+                    label.removeAttr('style')
+                }
+            }
+        })
+    })
+    </script>
+</head>
+<body>
+    <div class="tasks">
+        <h1>List of Tasks</h1>
+        <div id="task-list"></div>
+    </div>
+    <div class="create">
+        <form action="/create" method="post" id="task-form">
+            <input type="text" name="task" id="task-input" placeholder="Create a New Task">
+            <button class="submit" type="submit">Add Task</button>
+        </form>
+    </div>
+</body>
+</html>

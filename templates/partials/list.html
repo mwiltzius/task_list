@@ -1,0 +1,11 @@
+{% for task in tasks %}
+    <div class="task">
+        <button type="submit" class="edit">Edit</button>
+        <input type="checkbox" name="check" id={{task.id}} {% if task.finished == true  %}
+            checked="true" disabled
+        {% endif %}>
+        <label edit="false" for="{{task.id}}" {% if task.finished == true %}
+            style="color: grey"
+        {% endif %}>{{ task.task }}</label>
+    </div>
+{% endfor %}
